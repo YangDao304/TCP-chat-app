@@ -3,20 +3,20 @@
 1. Đào Châu Giang ID: 079206001855
    Github: YangDao304
    
-2. Phạm Thanh Hải ID:
-   Github:
+2. Phạm Thanh Hải ID: 
+   Github: thanhhai36343-a11y
 
 3. Nguyễn Chí Hải ID:
-   Github:
+   Github: Dno-0749
 
 4. Phạm Thái Bình ID:
-   Github:
+   Github: phamthaibinh777
 
 5. Phạm Văn Tuấn ID:
-   Github:
+   Github: phamtuan77
 
 6. Lê Thanh Vinh ID:
-   Github:
+   Github: lethanhvinh050106
 
 ### Project Description ###
 
