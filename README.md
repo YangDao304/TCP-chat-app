@@ -22,18 +22,18 @@
 - This project is a GUI-based chat application using TCP Socket Programming. 
 - The application allows multiple users to connect to a server and communicate in real time through a desktop graphical user interface. 
 ### Features ###
--GUI Login 
--TCP Client-Server Connection 
--Multi-client Chat 
--Real-time Messaging 
--Online User List 
--Join/Leave Notification 
--Timestamp Message 
--Disconnect Handling 
--Private Message (bonus) 
--File Transfer 
--Chat History Saving 
--Dark Mode GUI 
+- GUI Login 
+- TCP Client-Server Connection 
+- Multi-client Chat 
+- Real-time Messaging 
+- Online User List 
+- Join/Leave Notification 
+- Timestamp Message 
+- Disconnect Handling 
+- Private Message (bonus) 
+- File Transfer 
+- Chat History Saving 
+- Dark Mode GUI 
 ### Teachnology Stack ###
 - Java
 - Java Swing
