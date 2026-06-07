@@ -40,7 +40,7 @@ public class Server {
 
                             System.out.println("Client: " + message);
 
-                            //  gửi lại client
+                            
                             out.println("Da nhan -> " + message);
                         }
 
