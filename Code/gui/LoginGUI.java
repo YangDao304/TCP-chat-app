@@ -1,7 +1,12 @@
+package gui;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.net.Socket;
+import client.ConnectionManager;
+import util.ConnectionValidator;
+import client.ChatGUI;
 
 public class LoginGUI extends JFrame {
 
@@ -45,20 +50,46 @@ public class LoginGUI extends JFrame {
         String serverIP = serverIPField.getText();
         String portText = portField.getText();
 
-        if (username.isEmpty() || serverIP.isEmpty() || portText.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in all fields!");
+        if (!ConnectionValidator.isValidUsername(username)) {
+
+            JOptionPane.showMessageDialog(
+                this,
+                "Username cannot be empty!");
+
             return;
         }
 
         try {
             int port = Integer.parseInt(portText);
 
-            Socket socket = new Socket(serverIP, port);
+            if (!ConnectionValidator.isValidIP(serverIP)) {
+
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Invalid IP Address!");
+
+            return;
+            }
+
+            if (!ConnectionValidator.isValidPort(port)) {
+
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Invalid Port!");
+
+            return;
+            }
+
+            ConnectionManager manager = new ConnectionManager();
+
+            Socket socket = manager.connect(serverIP, port);
 
             JOptionPane.showMessageDialog(this,
-                    "Connected successfully!\nUsername: " + username);
+                "Connected successfully!\nUsername: " + username);
 
-            socket.close();
+            new ChatGUI(socket, username);
+
+            dispose();
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Port must be a number!");

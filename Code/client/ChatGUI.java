@@ -14,7 +14,7 @@ public class ChatGUI extends JFrame {
     private PrintWriter out;
     private BufferedReader in;
 
-    public ChatGUI() {
+    public ChatGUI(Socket socket, String username) {
 
         setTitle("Chat App");
         setSize(400, 500);
@@ -36,44 +36,54 @@ public class ChatGUI extends JFrame {
         add(scroll, BorderLayout.CENTER);
         add(panel, BorderLayout.SOUTH);
 
-        setVisible(true);
-
-        connect();
-
-        sendButton.addActionListener(e -> send());
-        inputField.addActionListener(e -> send());
-    }
-
-    private void connect() {
         try {
-            Socket socket = new Socket("127.0.0.1", 1234);
 
-            out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(
+                socket.getOutputStream(), true);
 
-            chatArea.append("Connected\n");
+            in = new BufferedReader(
+                new InputStreamReader(
+                    socket.getInputStream()));
+
+            chatArea.append(
+                "Connected as " + username + "\n");
 
             new Thread(() -> {
+
                 try {
+
                     String msg;
+
                     while ((msg = in.readLine()) != null) {
-                        chatArea.append("[SERVER] " + msg + "\n");
+
+                        chatArea.append(
+                            "[SERVER] " + msg + "\n");
                     }
+
                 } catch (Exception e) {
+
                     chatArea.append("Disconnected\n");
                 }
+
             }).start();
 
         } catch (Exception e) {
-            chatArea.append("Cannot connect\n");
+
+            chatArea.append("Connection Error\n");
         }
-    }
+
+        sendButton.addActionListener(e -> send());
+        inputField.addActionListener(e -> send());
+
+        setVisible(true);
+
+        }
 
     private void send() {
 
         String message = inputField.getText();
 
-        if (!message.isEmpty()) {
+        if (!message.trim().isEmpty()) {
             chatArea.append("[BAN] " + message + "\n");
 
             out.println(message);
@@ -81,7 +91,5 @@ public class ChatGUI extends JFrame {
         }
     }
 
-    public static void main(String[] args) {
-        new ChatGUI();
-    }
+   
 }
