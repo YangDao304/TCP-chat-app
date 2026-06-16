@@ -33,7 +33,7 @@ public class LoginGUI extends JFrame {
         panel.add(serverIPField);
 
         panel.add(new JLabel("Port:"));
-        portField = new JTextField("8080");
+        portField = new JTextField("1234");
         panel.add(portField);
 
         connectButton = new JButton("Connect");

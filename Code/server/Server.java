@@ -1,57 +1,32 @@
 package server;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
 
 public class Server {
 
     private static final int PORT = 1234;
 
     public static void main(String[] args) {
+        List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
 
-        try {
-            ServerSocket serverSocket = new ServerSocket(PORT);
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("=================================");
             System.out.println(" SERVER IS RUNNING...");
             System.out.println(" Port: " + PORT);
             System.out.println("=================================");
 
             while (true) {
-
                 Socket socket = serverSocket.accept();
-
-                String clientIP =
-                        socket.getInetAddress().getHostAddress();
-
-                System.out.println(
-                        "New client connected: " + clientIP);
-
-                new Thread(() -> {
-                    try {
-                        BufferedReader in = new BufferedReader(
-                                new InputStreamReader(socket.getInputStream()));
-
-                        PrintWriter out = new PrintWriter(
-                                socket.getOutputStream(), true);
-
-                        String message;
-
-                        while ((message = in.readLine()) != null) {
-
-                            System.out.println("Client: " + message);
-
-                            
-                            out.println("Da nhan -> " + message);
-                        }
-
-                    } catch (Exception e) {
-                        System.out.println("Client disconnected");
-                    }
-                }).start();
+                ClientHandler handler = new ClientHandler(socket, clients);
+                clients.add(handler);
+                new Thread(handler).start();
             }
-
         } catch (IOException e) {
-
             System.out.println("Server error!");
             e.printStackTrace();
         }
