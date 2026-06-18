@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class ClientHandler implements Runnable {
 
@@ -67,14 +69,20 @@ public class ClientHandler implements Runnable {
     }
 
     private void processClientMessage(String message) {
-        if (message == null || message.trim().isEmpty()) {
-            return;
-        }
-
-        String formatted = username + ": " + message;
-        appendInfo(formatted);
-        broadcast(formatted, this);
+    if (message == null || message.trim().isEmpty()) {
+        return;
     }
+
+    String timestamp =
+            LocalDateTime.now().format(
+                    DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+    String formatted =
+            "[" + timestamp + "] " + username + ": " + message;
+
+    appendInfo(formatted);
+    broadcast(formatted, this);
+}
 
     public void sendMessage(String message) {
         if (out != null) {
