@@ -82,6 +82,8 @@ public class ChatGUI extends JFrame {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
+            out.println("USERNAME:" + username);
+
             appendStatus("Connected to server: " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
             appendChat("You are connected as " + username + ".");
 
@@ -117,12 +119,13 @@ public class ChatGUI extends JFrame {
             return;
         }
 
-        String formatted = username + ": " + message;
-        out.println(formatted);
-        //appendChat("[Me] " + message);
-        inputField.setText("");
-    }
+        out.println(message);
 
+        appendChat("[Me] " + message);
+
+        inputField.setText("");
+}
+    
     private void disconnect() {
         if (socket == null || socket.isClosed()) {
             return;
@@ -165,8 +168,8 @@ public class ChatGUI extends JFrame {
     private void appendStatus(String status) {
         SwingUtilities.invokeLater(() -> statusLabel.setText(status));
     }
-
     public static void main(String[] args) {
+
     String serverIP = JOptionPane.showInputDialog(
             null,
             "Enter Server IP:",
@@ -183,6 +186,8 @@ public class ChatGUI extends JFrame {
         JOptionPane.showMessageDialog(
                 null,
                 "Cannot connect to server: " + e.getMessage());
-                }
+    }
 }
 }
+   
+
