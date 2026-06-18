@@ -119,7 +119,7 @@ public class ChatGUI extends JFrame {
 
         String formatted = username + ": " + message;
         out.println(formatted);
-        appendChat("[Me] " + message);
+        //appendChat("[Me] " + message);
         inputField.setText("");
     }
 
@@ -165,4 +165,24 @@ public class ChatGUI extends JFrame {
     private void appendStatus(String status) {
         SwingUtilities.invokeLater(() -> statusLabel.setText(status));
     }
+
+    public static void main(String[] args) {
+    String serverIP = JOptionPane.showInputDialog(
+            null,
+            "Enter Server IP:",
+            "127.0.0.1");
+
+    String username = JOptionPane.showInputDialog(
+            null,
+            "Enter Username:");
+
+    try {
+        Socket socket = new Socket(serverIP, 1234);
+        new ChatGUI(socket, username);
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(
+                null,
+                "Cannot connect to server: " + e.getMessage());
+                }
+}
 }
