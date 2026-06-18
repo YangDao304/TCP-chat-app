@@ -12,7 +12,8 @@ public class Server {
     private static final int PORT = 1234;
 
     public static void main(String[] args) {
-        List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
+        List<ClientHandler> clients =
+                Collections.synchronizedList(new ArrayList<>());
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("=================================");
@@ -22,10 +23,15 @@ public class Server {
 
             while (true) {
                 Socket socket = serverSocket.accept();
-                ClientHandler handler = new ClientHandler(socket, clients);
+
+                ClientHandler handler =
+                        new ClientHandler(socket, clients);
+
                 clients.add(handler);
+
                 new Thread(handler).start();
             }
+
         } catch (IOException e) {
             System.out.println("Server error!");
             e.printStackTrace();
