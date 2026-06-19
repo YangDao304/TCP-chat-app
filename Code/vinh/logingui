@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.net.Socket;
 
 public class LoginGUI extends JFrame {
 
@@ -11,8 +9,9 @@ public class LoginGUI extends JFrame {
     private JButton connectButton;
 
     public LoginGUI() {
+
         setTitle("Client Login");
-        setSize(350, 220);
+        setSize(400, 250);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -31,44 +30,35 @@ public class LoginGUI extends JFrame {
         portField = new JTextField("8080");
         panel.add(portField);
 
+        panel.add(new JLabel(""));
         connectButton = new JButton("Connect");
-        panel.add(new JLabel());
         panel.add(connectButton);
 
         add(panel);
 
-        connectButton.addActionListener(e -> connectToServer());
+        connectButton.addActionListener(e -> connectToChat());
     }
 
-    private void connectToServer() {
-        String username = usernameField.getText();
-        String serverIP = serverIPField.getText();
-        String portText = portField.getText();
+    private void connectToChat() {
 
-        if (username.isEmpty() || serverIP.isEmpty() || portText.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in all fields!");
+        String username = usernameField.getText().trim();
+        String serverIP = serverIPField.getText().trim();
+        String port = portField.getText().trim();
+
+        if (username.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Please enter username!");
             return;
         }
 
-        try {
-            int port = Integer.parseInt(portText);
+        new ChatRoomGUI(username, serverIP, port);
 
-            Socket socket = new Socket(serverIP, port);
-
-            JOptionPane.showMessageDialog(this,
-                    "Connected successfully!\nUsername: " + username);
-
-            socket.close();
-
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Port must be a number!");
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Connection failed!\nPlease check Server IP and Port.");
-        }
+        dispose();
     }
 
     public static void main(String[] args) {
-        new LoginGUI().setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            new LoginGUI().setVisible(true);
+        });
     }
 }
