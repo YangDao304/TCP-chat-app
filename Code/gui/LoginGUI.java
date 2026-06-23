@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.net.Socket;
 import client.ConnectionManager;
 import util.ConnectionValidator;
-import client.ChatGUI;
+import gui.ChatRoomGUI;
 
 public class LoginGUI extends JFrame {
 
@@ -87,7 +87,7 @@ public class LoginGUI extends JFrame {
             JOptionPane.showMessageDialog(this,
                 "Connected successfully!\nUsername: " + username);
 
-            new ChatGUI(socket, username);
+            new ChatRoomGUI(socket, username, serverIP, portText);
 
             dispose();
 

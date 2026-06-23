@@ -92,9 +92,8 @@ public class ClientHandler implements Runnable {
 
     private void broadcast(String message, ClientHandler sender) {
         for (ClientHandler client : clients) {
-            if (client != sender) {
-                client.sendMessage(message);
-            }
+            
+            client.sendMessage(message);
         }
     }
 

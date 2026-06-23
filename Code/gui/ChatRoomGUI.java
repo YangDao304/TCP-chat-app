@@ -1,5 +1,13 @@
+package gui;
+
+import java.net.Socket;
+import java.io.PrintWriter;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import javax.swing.*;
 import java.awt.*;
+
+
 
 public class ChatRoomGUI extends JFrame {
 
@@ -8,10 +16,30 @@ public class ChatRoomGUI extends JFrame {
     private JButton sendButton;
     private JLabel userInfoLabel;
     private JLabel statusLabel;
-
+    
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    
     private String username;
 
-    public ChatRoomGUI(String username, String serverIP, String port) {
+    public ChatRoomGUI(Socket socket, String username, String serverIP, String port) {
+        this.socket = socket;
+        try {
+
+            out = new PrintWriter(
+                socket.getOutputStream(),
+                true);
+            out.println("USERNAME:" + username);
+
+            in = new BufferedReader(
+                new InputStreamReader(
+                    socket.getInputStream()));
+
+        } catch (Exception e) {
+
+            JOptionPane.showMessageDialog(this, "Connection Error!");
+        }
         this.username = username;
 
         setTitle("Chat Room");
@@ -61,20 +89,36 @@ public class ChatRoomGUI extends JFrame {
         sendButton.addActionListener(e -> sendMessage());
         messageField.addActionListener(e -> sendMessage());
 
+        new Thread(() -> {
+            try {
+                String msg;
+                while ((msg = in.readLine()) != null) {
+                    chatArea.append(msg + "\n");
+                    chatArea.setCaretPosition(chatArea.getDocument().getLength());
+                }
+            } catch (Exception e) {
+                chatArea.append("[SYSTEM] Disconnected from server\n");
+            }
+
+        }).start();
         setVisible(true);
     }
 
     private void sendMessage() {
-        String message = messageField.getText().trim();
+
+        String message =
+            messageField.getText().trim();
 
         if (message.isEmpty()) {
+
             JOptionPane.showMessageDialog(this, "Please enter a message!");
+
             return;
         }
 
-        chatArea.append(username + ": " + message + "\n");
-        chatArea.setCaretPosition(chatArea.getDocument().getLength());
-
+        out.println(message);
         messageField.setText("");
     }
+
+        
 }

@@ -34,6 +34,7 @@ public class Client {
                  BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
                 System.out.println("Ket noi thanh cong toi Server!");
+                out.println("USERNAME:" + username);
                 System.out.println("[Che do Chat - Nhap 'exit' de thoat]");
 
                 Thread listener = new Thread(() -> {
@@ -63,7 +64,7 @@ public class Client {
                         continue;
                     }
 
-                    out.println(username + ": " + message);
+                    out.println(message);
                 }
 
             } catch (UnknownHostException e) {
