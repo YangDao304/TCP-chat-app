@@ -1,131 +1,250 @@
 package server;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.List;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
 public class ClientHandler implements Runnable {
 
     private final Socket socket;
-    private final List<ClientHandler> clients;
+    private final ClientManager manager;
+
     private BufferedReader in;
     private PrintWriter out;
+
     private String username;
 
-    public ClientHandler(Socket socket, List<ClientHandler> clients) {
+    public ClientHandler(Socket socket, ClientManager manager) {
         this.socket = socket;
-        this.clients = clients;
+        this.manager = manager;
     }
 
     @Override
     public void run() {
-        try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
 
-            String remoteAddress = socket.getInetAddress().getHostAddress();
-            appendInfo("Connected from " + remoteAddress + ". Waiting for username...");
+        try {
+
+            in = new BufferedReader(
+                    new InputStreamReader(
+                            socket.getInputStream()));
+
+            out = new PrintWriter(
+                    socket.getOutputStream(),
+                    true);
+
+            String remoteAddress =
+                    socket.getInetAddress()
+                          .getHostAddress();
+
+            System.out.println(
+                    "Connected from "
+                    + remoteAddress
+                    + ". Waiting for username...");
 
             String firstLine = in.readLine();
+
             if (firstLine == null) {
                 return;
             }
 
             if (firstLine.startsWith("USERNAME:")) {
-                username = firstLine.substring("USERNAME:".length()).trim();
+
+                username = firstLine
+                        .substring("USERNAME:".length())
+                        .trim();
+
             } else {
+
                 username = remoteAddress;
-                processClientMessage(firstLine);
+
+                processMessage(firstLine);
             }
 
-            if (username.isEmpty()) {
+            if (username == null || username.isEmpty()) {
                 username = remoteAddress;
             }
 
-            String joinMessage = username + " has joined the chat.";
-            appendInfo(joinMessage);
-            broadcast("[SERVER] " + joinMessage, this);
-            sendMessage("[SERVER] Welcome, " + username + "!");
-            sendMessage("[SERVER] Online users: " + getUserList());
+            String joinMessage =
+                    username + " has joined the chat.";
+
+            System.out.println(joinMessage);
+
+            manager.broadcast(
+                    "[SERVER] " + joinMessage);
+
+            sendMessage(
+                    "[SERVER] Welcome, "
+                    + username
+                    + "!");
+
+            sendMessage(
+                    "[SERVER] Online users: "
+                    + manager.getUserList());
 
             String message;
+
             while ((message = in.readLine()) != null) {
-                if ("exit".equalsIgnoreCase(message.trim())) {
+
+                if ("exit".equalsIgnoreCase(
+                        message.trim())
+                    || "/exit".equalsIgnoreCase(
+                        message.trim())) {
+
                     break;
                 }
 
-                processClientMessage(message);
+                processMessage(message);
             }
+
         } catch (IOException e) {
-            appendInfo("Connection error for " + username + ": " + e.getMessage());
+
+            System.out.println(
+                    "Connection error for "
+                    + username
+                    + ": "
+                    + e.getMessage());
+
         } finally {
-            closeConnection();
+
+            cleanup();
         }
     }
 
-    private void processClientMessage(String message) {
-    if (message == null || message.trim().isEmpty()) {
-        return;
+    private void processMessage(String message) {
+
+        if (message == null ||
+                message.trim().isEmpty()) {
+
+            return;
+        }
+
+        // PRIVATE MESSAGE
+        if (message.startsWith("/pm ")) {
+
+            handlePrivateMessage(message);
+
+            return;
+        }
+
+        String timestamp =
+                LocalDateTime.now()
+                        .format(
+                                DateTimeFormatter
+                                        .ofPattern(
+                                                "HH:mm:ss"));
+
+        String formatted =
+                "[" + timestamp + "] "
+                + username
+                + ": "
+                + message;
+
+        System.out.println(formatted);
+
+        manager.broadcast(formatted);
     }
 
-    String timestamp =
-            LocalDateTime.now().format(
-                    DateTimeFormatter.ofPattern("HH:mm:ss"));
+    private void handlePrivateMessage(
+            String command) {
 
-    String formatted =
-            "[" + timestamp + "] " + username + ": " + message;
+        String[] parts =
+                command.split(" ", 3);
 
-    appendInfo(formatted);
-    broadcast(formatted, this);
-}
+        if (parts.length < 3) {
+
+            sendMessage(
+                    "[SERVER] Usage: "
+                    + "/pm username message");
+
+            return;
+        }
+
+        String targetUser = parts[1];
+        String privateMessage = parts[2];
+
+        ClientHandler receiver =
+                manager.findClient(targetUser);
+
+        if (receiver == null) {
+
+            sendMessage(
+                    "[SERVER] User "
+                    + targetUser
+                    + " not found.");
+
+            return;
+        }
+
+        receiver.sendMessage(
+                "[PM from "
+                + username
+                + "] "
+                + privateMessage);
+
+        sendMessage(
+                "[PM to "
+                + targetUser
+                + "] "
+                + privateMessage);
+
+        System.out.println(
+                "[PRIVATE] "
+                + username
+                + " -> "
+                + targetUser
+                + ": "
+                + privateMessage);
+    }
 
     public void sendMessage(String message) {
+
         if (out != null) {
             out.println(message);
         }
     }
 
-    private void broadcast(String message, ClientHandler sender) {
-        for (ClientHandler client : clients) {
-            
-            client.sendMessage(message);
-        }
+    public String getUsername() {
+        return username;
     }
 
-    private String getUserList() {
-        StringBuilder builder = new StringBuilder();
-        for (ClientHandler client : clients) {
-            if (builder.length() > 0) {
-                builder.append(", ");
-            }
-            builder.append(client.username == null ? "Unknown" : client.username);
-        }
-        return builder.toString();
-    }
+    private void cleanup() {
 
-    private void closeConnection() {
         try {
+
+            manager.removeClient(this);
+
             if (username != null) {
-                String leaveMessage = username + " has left the chat.";
-                appendInfo(leaveMessage);
-                broadcast("[SERVER] " + leaveMessage, this);
+
+                String leaveMessage =
+                        username
+                        + " has left the chat.";
+
+                System.out.println(leaveMessage);
+
+                manager.broadcast(
+                        "[SERVER] "
+                        + leaveMessage);
             }
 
-            clients.remove(this);
+            if (in != null) {
+                in.close();
+            }
 
-            if (socket != null && !socket.isClosed()) {
+            if (out != null) {
+                out.close();
+            }
+
+            if (socket != null &&
+                    !socket.isClosed()) {
+
                 socket.close();
             }
-        } catch (IOException ignored) {
-        }
-    }
 
-    private void appendInfo(String message) {
-        System.out.println(message);
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
     }
 }
