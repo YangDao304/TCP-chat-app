@@ -1,60 +1,36 @@
-package gui;
-
-import java.net.Socket;
-import java.io.PrintWriter;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import javax.swing.*;
 import java.awt.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-
-
-public class ChatRoomGUI extends JFrame {
+public class ChatGUI extends JFrame {
 
     private JTextArea chatArea;
     private JTextField messageField;
-    private JButton sendButton;
-    private JLabel userInfoLabel;
-    private JLabel statusLabel;
-    
-    private Socket socket;
-    private PrintWriter out;
-    private BufferedReader in;
-    
+    private JLabel notificationLabel;
     private String username;
 
-    public ChatRoomGUI(Socket socket, String username, String serverIP, String port) {
-        this.socket = socket;
-        try {
-
-            out = new PrintWriter(
-                socket.getOutputStream(),
-                true);
-            out.println("USERNAME:" + username);
-
-            in = new BufferedReader(
-                new InputStreamReader(
-                    socket.getInputStream()));
-
-        } catch (Exception e) {
-
-            JOptionPane.showMessageDialog(this, "Connection Error!");
-        }
+    public ChatGUI(String username, String serverIP, String port) {
         this.username = username;
 
         setTitle("Chat Room");
-        setSize(650, 480);
+        setSize(800, 520);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        userInfoLabel = new JLabel("User: " + username + " | Server: " + serverIP + ":" + port);
-        userInfoLabel.setFont(new Font("Arial", Font.BOLD, 14));
-
-        statusLabel = new JLabel("Status: Connected");
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBackground(new Color(245, 247, 250));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel topPanel = new JPanel(new GridLayout(2, 1));
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        topPanel.setBackground(new Color(245, 247, 250));
+
+        JLabel userInfoLabel = new JLabel("User: " + username + " | Server: " + serverIP + ":" + port);
+        userInfoLabel.setFont(new Font("Arial", Font.BOLD, 14));
+
+        JLabel statusLabel = new JLabel("Status: Connected");
+        statusLabel.setForeground(new Color(0, 150, 0));
+
         topPanel.add(userInfoLabel);
         topPanel.add(statusLabel);
 
@@ -63,62 +39,77 @@ public class ChatRoomGUI extends JFrame {
         chatArea.setLineWrap(true);
         chatArea.setWrapStyleWord(true);
         chatArea.setFont(new Font("Arial", Font.PLAIN, 14));
-        chatArea.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        JScrollPane scrollPane = new JScrollPane(chatArea);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Chat Messages"));
+        JScrollPane chatScrollPane = new JScrollPane(chatArea);
+        chatScrollPane.setBorder(BorderFactory.createTitledBorder("Chat Messages"));
+
+        DefaultListModel<String> userListModel = new DefaultListModel<>();
+        userListModel.addElement(username);
+        userListModel.addElement("User_1");
+        userListModel.addElement("User_2");
+
+        JList<String> onlineUserList = new JList<>(userListModel);
+        onlineUserList.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        JScrollPane userScrollPane = new JScrollPane(onlineUserList);
+        userScrollPane.setPreferredSize(new Dimension(160, 0));
+        userScrollPane.setBorder(BorderFactory.createTitledBorder("Online Users"));
 
         messageField = new JTextField();
         messageField.setFont(new Font("Arial", Font.PLAIN, 14));
 
-        sendButton = new JButton("Send");
-        sendButton.setFont(new Font("Arial", Font.BOLD, 13));
-        sendButton.setBackground(new Color(30, 144, 255));
-        sendButton.setForeground(Color.WHITE);
-        sendButton.setFocusPainted(false);
+        JButton sendButton = new JButton("Send");
+        sendButton.setFont(new Font("Arial", Font.BOLD, 14));
 
-        JPanel bottomPanel = new JPanel(new BorderLayout(10, 10));
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        bottomPanel.add(messageField, BorderLayout.CENTER);
-        bottomPanel.add(sendButton, BorderLayout.EAST);
+        JPanel inputPanel = new JPanel(new BorderLayout(8, 8));
+        inputPanel.setBackground(new Color(245, 247, 250));
+        inputPanel.add(messageField, BorderLayout.CENTER);
+        inputPanel.add(sendButton, BorderLayout.EAST);
 
-        add(topPanel, BorderLayout.NORTH);
-        add(scrollPane, BorderLayout.CENTER);
-        add(bottomPanel, BorderLayout.SOUTH);
+        notificationLabel = new JLabel("Welcome, " + username + "!");
+        notificationLabel.setForeground(Color.DARK_GRAY);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout(5, 5));
+        bottomPanel.setBackground(new Color(245, 247, 250));
+        bottomPanel.add(notificationLabel, BorderLayout.NORTH);
+        bottomPanel.add(inputPanel, BorderLayout.CENTER);
+
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(chatScrollPane, BorderLayout.CENTER);
+        mainPanel.add(userScrollPane, BorderLayout.EAST);
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        add(mainPanel);
 
         sendButton.addActionListener(e -> sendMessage());
         messageField.addActionListener(e -> sendMessage());
 
-        new Thread(() -> {
-            try {
-                String msg;
-                while ((msg = in.readLine()) != null) {
-                    chatArea.append(msg + "\n");
-                    chatArea.setCaretPosition(chatArea.getDocument().getLength());
-                }
-            } catch (Exception e) {
-                chatArea.append("[SYSTEM] Disconnected from server\n");
-            }
+        addSystemMessage("You joined the chat room.");
 
-        }).start();
         setVisible(true);
     }
 
     private void sendMessage() {
-
-        String message =
-            messageField.getText().trim();
+        String message = messageField.getText().trim();
 
         if (message.isEmpty()) {
-
-            JOptionPane.showMessageDialog(this, "Please enter a message!");
-
+            notificationLabel.setText("Notification: Please enter a message!");
+            notificationLabel.setForeground(Color.RED);
             return;
         }
 
-        out.println(message);
+        String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
+
+        chatArea.append("[" + time + "] " + username + ": " + message + "\n");
+        chatArea.setCaretPosition(chatArea.getDocument().getLength());
+
         messageField.setText("");
+        notificationLabel.setText("Message sent successfully.");
+        notificationLabel.setForeground(new Color(0, 150, 0));
     }
 
-        
+    private void addSystemMessage(String message) {
+        String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
+        chatArea.append("[" + time + "] System: " + message + "\n");
+    }
 }
