@@ -1,105 +1,88 @@
-package gui;
-
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.net.Socket;
-import client.ConnectionManager;
-import util.ConnectionValidator;
-import gui.ChatRoomGUI;
 
 public class LoginGUI extends JFrame {
 
     private JTextField usernameField;
     private JTextField serverIPField;
     private JTextField portField;
-    private JButton connectButton;
+    private JLabel statusLabel;
 
     public LoginGUI() {
         setTitle("Client Login");
-        setSize(350, 220);
+        setSize(420, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setResizable(false);
 
-        JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBackground(new Color(245, 247, 250));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
 
-        panel.add(new JLabel("Username:"));
+        JLabel titleLabel = new JLabel("Chat Login", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+
+        JPanel formPanel = new JPanel(new GridLayout(3, 2, 12, 12));
+        formPanel.setBackground(new Color(245, 247, 250));
+
+        formPanel.add(new JLabel("Username:"));
         usernameField = new JTextField();
-        panel.add(usernameField);
+        formPanel.add(usernameField);
 
-        panel.add(new JLabel("Server IP:"));
+        formPanel.add(new JLabel("Server IP:"));
         serverIPField = new JTextField("127.0.0.1");
-        panel.add(serverIPField);
+        formPanel.add(serverIPField);
 
-        panel.add(new JLabel("Port:"));
-        portField = new JTextField("1234");
-        panel.add(portField);
+        formPanel.add(new JLabel("Port:"));
+        portField = new JTextField("8080");
+        formPanel.add(portField);
 
-        connectButton = new JButton("Connect");
-        panel.add(new JLabel());
-        panel.add(connectButton);
+        JButton connectButton = new JButton("Connect");
+        connectButton.setFont(new Font("Arial", Font.BOLD, 14));
 
-        add(panel);
+        statusLabel = new JLabel("Status: Not connected", SwingConstants.CENTER);
+        statusLabel.setForeground(Color.RED);
 
-        connectButton.addActionListener(e -> connectToServer());
+        JPanel bottomPanel = new JPanel(new GridLayout(2, 1, 8, 8));
+        bottomPanel.setBackground(new Color(245, 247, 250));
+        bottomPanel.add(connectButton);
+        bottomPanel.add(statusLabel);
+
+        mainPanel.add(titleLabel, BorderLayout.NORTH);
+        mainPanel.add(formPanel, BorderLayout.CENTER);
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        add(mainPanel);
+
+        connectButton.addActionListener(e -> connectToChat());
     }
 
-    private void connectToServer() {
-        String username = usernameField.getText();
-        String serverIP = serverIPField.getText();
-        String portText = portField.getText();
+    private void connectToChat() {
+        String username = usernameField.getText().trim();
+        String serverIP = serverIPField.getText().trim();
+        String port = portField.getText().trim();
 
-        if (!ConnectionValidator.isValidUsername(username)) {
-
-            JOptionPane.showMessageDialog(
-                this,
-                "Username cannot be empty!");
-
+        if (username.isEmpty() || serverIP.isEmpty() || port.isEmpty()) {
+            statusLabel.setText("Status: Please fill all fields");
+            statusLabel.setForeground(Color.RED);
             return;
         }
 
         try {
-            int port = Integer.parseInt(portText);
+            Integer.parseInt(port);
+            statusLabel.setText("Status: Connected");
+            statusLabel.setForeground(new Color(0, 150, 0));
 
-            if (!ConnectionValidator.isValidIP(serverIP)) {
-
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Invalid IP Address!");
-
-            return;
-            }
-
-            if (!ConnectionValidator.isValidPort(port)) {
-
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Invalid Port!");
-
-            return;
-            }
-
-            ConnectionManager manager = new ConnectionManager();
-
-            Socket socket = manager.connect(serverIP, port);
-
-            JOptionPane.showMessageDialog(this,
-                "Connected successfully!\nUsername: " + username);
-
-            new ChatRoomGUI(socket, username, serverIP, portText);
-
+            new ChatGUI(username, serverIP, port);
             dispose();
 
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Port must be a number!");
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Connection failed!\nPlease check Server IP and Port.");
+        } catch (NumberFormatException e) {
+            statusLabel.setText("Status: Port must be a number");
+            statusLabel.setForeground(Color.RED);
         }
     }
 
     public static void main(String[] args) {
-        new LoginGUI().setVisible(true);
+        SwingUtilities.invokeLater(() -> new LoginGUI().setVisible(true));
     }
 }
