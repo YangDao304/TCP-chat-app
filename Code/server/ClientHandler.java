@@ -1,11 +1,10 @@
 package server;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+
+import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 public class ClientHandler implements Runnable {
 
     private final Socket socket;
@@ -23,228 +22,89 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-
         try {
-
-            in = new BufferedReader(
-                    new InputStreamReader(
-                            socket.getInputStream()));
-
-            out = new PrintWriter(
-                    socket.getOutputStream(),
-                    true);
-
-            String remoteAddress =
-                    socket.getInetAddress()
-                          .getHostAddress();
-
-            System.out.println(
-                    "Connected from "
-                    + remoteAddress
-                    + ". Waiting for username...");
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
 
             String firstLine = in.readLine();
 
-            if (firstLine == null) {
-                return;
-            }
-
-            if (firstLine.startsWith("USERNAME:")) {
-
-                username = firstLine
-                        .substring("USERNAME:".length())
-                        .trim();
-
-            } else {
-
-                username = remoteAddress;
-
-                processMessage(firstLine);
+            if (firstLine != null && firstLine.startsWith("USERNAME:")) {
+                username = firstLine.substring(9).trim();
             }
 
             if (username == null || username.isEmpty()) {
-                username = remoteAddress;
+                username = socket.getInetAddress().getHostAddress();
             }
 
-            String joinMessage =
-                    username + " has joined the chat.";
+            System.out.println(username + " connected");
 
-            System.out.println(joinMessage);
+            // JOIN
+            manager.broadcast("[SERVER] " + username + " has joined chat.");
+            sendUserList();
 
-            manager.broadcast(
-                    "[SERVER] " + joinMessage);
+            sendMessage("[SERVER] Welcome " + username);
 
-            sendMessage(
-                    "[SERVER] Welcome, "
-                    + username
-                    + "!");
+            String msg;
+            while ((msg = in.readLine()) != null) {
 
-            sendMessage(
-                    "[SERVER] Online users: "
-                    + manager.getUserList());
+                if (msg.startsWith("/pm ")) {
+                    handlePM(msg);
+                } else {
+                    String time = LocalDateTime.now()
+                            .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
 
-            String message;
-
-            while ((message = in.readLine()) != null) {
-
-                if ("exit".equalsIgnoreCase(
-                        message.trim())
-                    || "/exit".equalsIgnoreCase(
-                        message.trim())) {
-
-                    break;
+                    manager.broadcast("[" + time + "] " + username + ": " + msg);
                 }
-
-                processMessage(message);
             }
 
-        } catch (IOException e) {
-
-            System.out.println(
-                    "Connection error for "
-                    + username
-                    + ": "
-                    + e.getMessage());
-
+        } catch (Exception e) {
+            System.out.println("Error: " + username);
         } finally {
-
             cleanup();
         }
     }
 
-    private void processMessage(String message) {
+    private void handlePM(String msg) {
 
-        if (message == null ||
-                message.trim().isEmpty()) {
+        String[] parts = msg.split(" ", 3);
+        if (parts.length < 3) return;
 
-            return;
+        String target = parts[1];
+        String content = parts[2];
+
+        ClientHandler receiver = manager.findClient(target);
+
+        String time = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+        if (receiver != null) {
+            receiver.sendMessage("[PM][" + time + "] from " + username + ": " + content);
+            sendMessage("[PM][" + time + "] to " + target + ": " + content);
+        } else {
+            sendMessage("[SERVER] User not found");
         }
-
-        // PRIVATE MESSAGE
-        if (message.startsWith("/pm ")) {
-
-            handlePrivateMessage(message);
-
-            return;
-        }
-
-        String timestamp =
-                LocalDateTime.now()
-                        .format(
-                                DateTimeFormatter
-                                        .ofPattern(
-                                                "HH:mm:ss"));
-
-        String formatted =
-                "[" + timestamp + "] "
-                + username
-                + ": "
-                + message;
-
-        System.out.println(formatted);
-
-        manager.broadcast(formatted);
     }
 
-    private void handlePrivateMessage(
-            String command) {
-
-        String[] parts =
-                command.split(" ", 3);
-
-        if (parts.length < 3) {
-
-            sendMessage(
-                    "[SERVER] Usage: "
-                    + "/pm username message");
-
-            return;
-        }
-
-        String targetUser = parts[1];
-        String privateMessage = parts[2];
-
-        ClientHandler receiver =
-                manager.findClient(targetUser);
-
-        if (receiver == null) {
-
-            sendMessage(
-                    "[SERVER] User "
-                    + targetUser
-                    + " not found.");
-
-            return;
-        }
-
-        receiver.sendMessage(
-                "[PM from "
-                + username
-                + "] "
-                + privateMessage);
-
-        sendMessage(
-                "[PM to "
-                + targetUser
-                + "] "
-                + privateMessage);
-
-        System.out.println(
-                "[PRIVATE] "
-                + username
-                + " -> "
-                + targetUser
-                + ": "
-                + privateMessage);
-    }
-
-    public void sendMessage(String message) {
-
-        if (out != null) {
-            out.println(message);
-        }
+    public void sendMessage(String msg) {
+        if (out != null) out.println(msg);
     }
 
     public String getUsername() {
         return username;
     }
 
+    private void sendUserList() {
+        manager.broadcast("USERLIST:" + manager.getUserList());
+    }
+
     private void cleanup() {
-
         try {
-
             manager.removeClient(this);
 
-            if (username != null) {
+            manager.broadcast("[SERVER] " + username + " left chat.");
+            sendUserList();
 
-                String leaveMessage =
-                        username
-                        + " has left the chat.";
-
-                System.out.println(leaveMessage);
-
-                manager.broadcast(
-                        "[SERVER] "
-                        + leaveMessage);
-            }
-
-            if (in != null) {
-                in.close();
-            }
-
-            if (out != null) {
-                out.close();
-            }
-
-            if (socket != null &&
-                    !socket.isClosed()) {
-
-                socket.close();
-            }
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
+            socket.close();
+        } catch (Exception ignored) {}
     }
 }
