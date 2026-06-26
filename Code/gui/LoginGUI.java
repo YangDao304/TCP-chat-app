@@ -1,3 +1,4 @@
+package gui;
 import javax.swing.*;
 import java.awt.*;
 
@@ -73,7 +74,7 @@ public class LoginGUI extends JFrame {
             statusLabel.setText("Status: Connected");
             statusLabel.setForeground(new Color(0, 150, 0));
 
-            new ChatGUI(username, serverIP, port);
+        new ChatGUI(username, serverIP, String.valueOf(port));
             dispose();
 
         } catch (NumberFormatException e) {
