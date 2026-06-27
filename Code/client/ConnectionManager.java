@@ -16,26 +16,23 @@ public class ConnectionManager {
             SocketException,
             IOException {
 
+        disconnect();
         socket = new Socket(ip, port);
-
+        socket.setSoTimeout(0);
         return socket;
     }
 
     public void disconnect() throws IOException {
-
         if (socket != null && !socket.isClosed()) {
             socket.close();
         }
+        socket = null;
     }
 
     public Socket reconnect(String ip, int port)
             throws IOException {
-
         disconnect();
-
-        socket = new Socket(ip, port);
-
-        return socket;
+        return connect(ip, port);
     }
 
     public Socket getSocket() {
@@ -43,7 +40,6 @@ public class ConnectionManager {
     }
 
     public boolean isConnected() {
-
         return socket != null
                 && socket.isConnected()
                 && !socket.isClosed();
