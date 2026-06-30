@@ -5,22 +5,24 @@ import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 
-public class ChatGUI extends JFrame {
+public class ChatRoomGUI extends JFrame {
 
     private JTextArea chatArea;
     private JTextField messageField;
+    private JButton sendButton;
 
     private DefaultListModel<String> userListModel;
     private JList<String> onlineUserList;
 
     private String selectedUser = "All";
+    private JLabel currentChatLabel;
 
     private PrintWriter out;
     private BufferedReader in;
 
     private String username;
 
-    public ChatGUI(String username, String serverIP, String port) {
+    public ChatRoomGUI(String username, String serverIP, String port) {
 
         this.username = username;
 
@@ -30,28 +32,44 @@ public class ChatGUI extends JFrame {
         setLocationRelativeTo(null);
 
         setLayout(new BorderLayout());
+        currentChatLabel = new JLabel("Chatting with: All");
+        currentChatLabel.setBorder(BorderFactory.createEmptyBorder(5,10,5,10));
 
         // CHAT
         chatArea = new JTextArea();
         chatArea.setEditable(false);
-        chatArea.setFont(new Font("Arial", Font.PLAIN, 14));
-        add(new JScrollPane(chatArea), BorderLayout.CENTER);
+        chatArea.setLineWrap(true);
+        chatArea.setWrapStyleWord(true);
+        chatArea.setFont(new Font("Arial", Font.PLAIN,14));
+        
+        JScrollPane chatScroll = new JScrollPane(chatArea);
+        chatScroll.setBorder(BorderFactory.createTitledBorder("Chat Messages"));
 
         // ONLINE USERS (RIGHT)
         userListModel = new DefaultListModel<>();
         userListModel.addElement("All");
 
         onlineUserList = new JList<>(userListModel);
-        onlineUserList.setPreferredSize(new Dimension(160, 0));
+        JScrollPane userScroll = new JScrollPane(onlineUserList);
+        userScroll.setPreferredSize(new Dimension(180,0));
+        userScroll.setBorder(BorderFactory.createTitledBorder("Online Users"));
 
         onlineUserList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 String user = onlineUserList.getSelectedValue();
                 if (user != null) selectedUser = user;
+                currentChatLabel.setText("Chatting with: " + selectedUser);
             }
         });
 
-        add(new JScrollPane(onlineUserList), BorderLayout.EAST);
+        JPanel chatPanel = new JPanel(new BorderLayout());
+        chatPanel.add(currentChatLabel, BorderLayout.NORTH);
+        chatPanel.add(chatScroll, BorderLayout.CENTER);
+
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(chatPanel, BorderLayout.CENTER);
+        centerPanel.add(userScroll, BorderLayout.EAST);
+        add(centerPanel, BorderLayout.CENTER);
 
         // INPUT
         JPanel bottom = new JPanel(new BorderLayout());
@@ -64,8 +82,15 @@ public class ChatGUI extends JFrame {
 
         add(bottom, BorderLayout.SOUTH);
 
-        send.addActionListener(e -> sendMessage());
-        messageField.addActionListener(e -> sendMessage());
+        send.addActionListener(e -> {
+            System.out.println("BUTTON CLICKED");
+            sendMessage();
+        });
+
+        messageField.addActionListener(e -> {
+            System.out.println("ENTER PRESSED");
+            sendMessage();
+        });
 
         connect(serverIP, port);
 
@@ -99,14 +124,18 @@ public class ChatGUI extends JFrame {
                 }
 
                 else if (msg.startsWith("[SERVER]")) {
-                    append(msg);
+                    if(msg.startsWith("[PM]")){
+                        append(
+                            "\n====================\n"
+                            + msg +
+                            "\n====================");
                 }
 
                 else {
                     append(msg);
                 }
             }
-
+        }
         } catch (Exception e) {
             append("[DISCONNECTED]");
         }
@@ -116,6 +145,7 @@ public class ChatGUI extends JFrame {
         SwingUtilities.invokeLater(() -> {
             userListModel.clear();
             userListModel.addElement("All");
+            selectedUser = "All";
 
             for (String u : users) {
                 if (!u.trim().isEmpty() && !u.equals(username)) {
@@ -126,6 +156,7 @@ public class ChatGUI extends JFrame {
     }
 
     private void sendMessage() {
+        System.out.println("Sending message to " + selectedUser);
         String msg = messageField.getText().trim();
         if (msg.isEmpty()) return;
 
@@ -136,15 +167,17 @@ public class ChatGUI extends JFrame {
         }
 
         messageField.setText("");
+        messageField.requestFocus();
     }
 
     private void append(String msg) {
         SwingUtilities.invokeLater(() -> {
             chatArea.append(msg + "\n");
+            chatArea.setCaretPosition(chatArea.getDocument().getLength());
         });
     }
 
     public static void main(String[] args) {
-        new ChatGUI("User", "127.0.0.1", "1234");
+        new ChatRoomGUI("User", "127.0.0.1", "1234");
     }
 }
