@@ -1,4 +1,7 @@
 package gui;
+
+import util.ThemeManager;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -7,24 +10,45 @@ public class LoginGUI extends JFrame {
     private JTextField usernameField;
     private JTextField serverIPField;
     private JTextField portField;
+
     private JLabel statusLabel;
 
+    private JButton themeButton;
+
     public LoginGUI() {
+
         setTitle("Client Login");
-        setSize(420, 300);
+        setSize(420, 350);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBackground(new Color(245, 247, 250));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+        JPanel mainPanel =
+                new JPanel(
+                        new BorderLayout(10,10));
 
-        JLabel titleLabel = new JLabel("Chat Login", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        mainPanel.setBorder(
+                BorderFactory.createEmptyBorder(
+                        20,25,20,25));
 
-        JPanel formPanel = new JPanel(new GridLayout(3, 2, 12, 12));
-        formPanel.setBackground(new Color(245, 247, 250));
+        JLabel titleLabel =
+                new JLabel(
+                        "Chat Login",
+                        SwingConstants.CENTER);
+
+        titleLabel.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        24));
+
+        JPanel formPanel =
+                new JPanel(
+                        new GridLayout(
+                                3,
+                                2,
+                                12,
+                                12));
 
         formPanel.add(new JLabel("Username:"));
         usernameField = new JTextField();
@@ -38,52 +62,126 @@ public class LoginGUI extends JFrame {
         portField = new JTextField("8080");
         formPanel.add(portField);
 
-        JButton connectButton = new JButton("Connect");
-        connectButton.setFont(new Font("Arial", Font.BOLD, 14));
+        JButton connectButton =
+                new JButton("Connect");
 
-        statusLabel = new JLabel("Status: Not connected", SwingConstants.CENTER);
+        connectButton.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        14));
+
+        themeButton =
+                new JButton("🌙 Dark Mode");
+
+        statusLabel =
+                new JLabel(
+                        "Status: Not connected",
+                        SwingConstants.CENTER);
+
         statusLabel.setForeground(Color.RED);
 
-        JPanel bottomPanel = new JPanel(new GridLayout(2, 1, 8, 8));
-        bottomPanel.setBackground(new Color(245, 247, 250));
+        JPanel bottomPanel =
+                new JPanel(
+                        new GridLayout(
+                                3,
+                                1,
+                                8,
+                                8));
+
         bottomPanel.add(connectButton);
+        bottomPanel.add(themeButton);
         bottomPanel.add(statusLabel);
 
-        mainPanel.add(titleLabel, BorderLayout.NORTH);
-        mainPanel.add(formPanel, BorderLayout.CENTER);
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        mainPanel.add(
+                titleLabel,
+                BorderLayout.NORTH);
+
+        mainPanel.add(
+                formPanel,
+                BorderLayout.CENTER);
+
+        mainPanel.add(
+                bottomPanel,
+                BorderLayout.SOUTH);
 
         add(mainPanel);
 
-        connectButton.addActionListener(e -> connectToChat());
+        ThemeManager.applyTheme(this);
+
+        connectButton.addActionListener(
+                e -> connectToChat());
+
+        themeButton.addActionListener(
+                e -> {
+
+                    ThemeManager.toggleTheme(this);
+
+                    if (ThemeManager.isDarkMode()) {
+                        themeButton.setText(
+                                "☀ Light Mode");
+                    }
+                    else {
+                        themeButton.setText(
+                                "🌙 Dark Mode");
+                    }
+                });
     }
 
     private void connectToChat() {
-        String username = usernameField.getText().trim();
-        String serverIP = serverIPField.getText().trim();
-        String port = portField.getText().trim();
 
-        if (username.isEmpty() || serverIP.isEmpty() || port.isEmpty()) {
-            statusLabel.setText("Status: Please fill all fields");
+        String username =
+                usernameField.getText().trim();
+
+        String serverIP =
+                serverIPField.getText().trim();
+
+        String port =
+                portField.getText().trim();
+
+        if (username.isEmpty()
+                || serverIP.isEmpty()
+                || port.isEmpty()) {
+
+            statusLabel.setText(
+                    "Status: Please fill all fields");
+
             statusLabel.setForeground(Color.RED);
+
             return;
         }
 
         try {
-            Integer.parseInt(port);
-            statusLabel.setText("Status: Connected");
-            statusLabel.setForeground(new Color(0, 150, 0));
 
-        new ChatRoomGUI(username, serverIP, String.valueOf(port));
+            Integer.parseInt(port);
+
+            statusLabel.setText(
+                    "Status: Connected");
+
+            statusLabel.setForeground(
+                    new Color(0,150,0));
+
+            new ChatRoomGUI(
+                    username,
+                    serverIP,
+                    port);
+
             dispose();
 
-        } catch (NumberFormatException e) {
-            statusLabel.setText("Status: Port must be a number");
+        }
+        catch (NumberFormatException e) {
+
+            statusLabel.setText(
+                    "Status: Port must be a number");
+
             statusLabel.setForeground(Color.RED);
         }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new LoginGUI().setVisible(true));
+
+        SwingUtilities.invokeLater(
+                () -> new LoginGUI()
+                        .setVisible(true));
     }
 }
