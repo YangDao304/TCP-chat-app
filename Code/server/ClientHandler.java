@@ -25,9 +25,14 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(
+        new InputStreamReader(
+                socket.getInputStream()));
 
+        out = new PrintWriter(
+                socket.getOutputStream(),
+                true);
+                
             String remoteAddress = socket.getInetAddress().getHostAddress();
             appendInfo("Connected from " + remoteAddress + ". Waiting for username...");
 
@@ -51,7 +56,7 @@ public class ClientHandler implements Runnable {
             appendInfo(joinMessage);
             broadcast("[SERVER] " + joinMessage, this);
             sendMessage("[SERVER] Welcome, " + username + "!");
-            sendMessage("[SERVER] Online users: " + getUserList());
+            broadcast("USERLIST:" + getUserList(), null);
 
             String message;
             while ((message = in.readLine()) != null) {
@@ -59,7 +64,11 @@ public class ClientHandler implements Runnable {
                     break;
                 }
 
-                processClientMessage(message);
+                if (message.startsWith("/pm ")) {
+                    processPrivateMessage(message);
+                } else {
+                    processClientMessage(message);
+                }
             }
         } catch (IOException e) {
             appendInfo("Connection error for " + username + ": " + e.getMessage());
@@ -71,7 +80,7 @@ public class ClientHandler implements Runnable {
     private void processClientMessage(String message) {
     if (message == null || message.trim().isEmpty()) {
         return;
-    }
+    }  
 
     String timestamp =
             LocalDateTime.now().format(
@@ -82,8 +91,44 @@ public class ClientHandler implements Runnable {
 
     appendInfo(formatted);
     broadcast(formatted, this);
-}
+    }
 
+    private void processPrivateMessage(String message) {
+
+        String[] parts = message.split(" ", 3);
+
+        if (parts.length < 3) {
+            sendMessage("[SERVER] Invalid private message.");
+            return;
+        }
+
+        String targetUser = parts[1];
+        String content = parts[2];
+
+        ClientHandler receiver = null;
+
+        for (ClientHandler client : clients) {
+
+            if (client.username != null &&
+                client.username.equalsIgnoreCase(targetUser)) {
+
+                receiver = client;
+                break;
+            }
+        }
+
+        if (receiver == null) {
+            sendMessage("[SERVER] User not found.");
+            return;
+        }
+
+        String timestamp = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+        receiver.sendMessage("[PM][" + timestamp + "] From "+ username + ": " + content);
+
+        sendMessage("[PM][" + timestamp + "] To "+ targetUser + ": " + content);
+    }
     public void sendMessage(String message) {
         if (out != null) {
             out.println(message);
@@ -101,7 +146,7 @@ public class ClientHandler implements Runnable {
         StringBuilder builder = new StringBuilder();
         for (ClientHandler client : clients) {
             if (builder.length() > 0) {
-                builder.append(", ");
+                builder.append(",");
             }
             builder.append(client.username == null ? "Unknown" : client.username);
         }
@@ -117,6 +162,7 @@ public class ClientHandler implements Runnable {
             }
 
             clients.remove(this);
+            broadcast("USERLIST:" + getUserList(), null);
 
             if (socket != null && !socket.isClosed()) {
                 socket.close();
