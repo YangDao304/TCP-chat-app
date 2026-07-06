@@ -2,6 +2,7 @@ package server;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -15,96 +16,201 @@ public class ClientHandler implements Runnable {
 
     private String username;
 
-    public ClientHandler(Socket socket, ClientManager manager) {
+    public ClientHandler(
+            Socket socket,
+            ClientManager manager) {
+
         this.socket = socket;
         this.manager = manager;
     }
 
     @Override
     public void run() {
+
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+
+            in = new BufferedReader(
+                    new InputStreamReader(
+                            socket.getInputStream(),
+                            StandardCharsets.UTF_8));
+
+            out = new PrintWriter(
+                    new OutputStreamWriter(
+                            socket.getOutputStream(),
+                            StandardCharsets.UTF_8),
+                    true);
 
             String firstLine = in.readLine();
 
-            if (firstLine != null && firstLine.startsWith("USERNAME:")) {
-                username = firstLine.substring(9).trim();
+            if (firstLine != null &&
+                    firstLine.startsWith("USERNAME:")) {
+
+                username =
+                        firstLine.substring(9).trim();
             }
 
-            if (username == null || username.isEmpty()) {
-                username = socket.getInetAddress().getHostAddress();
+            if (username == null ||
+                    username.isEmpty()) {
+
+                username =
+                        socket.getInetAddress()
+                                .getHostAddress();
             }
 
-            System.out.println(username + " connected");
+            System.out.println(
+                    username + " connected");
 
-            // JOIN
-            manager.broadcast("[SERVER] " + username + " has joined chat.");
+            // Thông báo user tham gia
+            manager.broadcast(
+                    "[SERVER] "
+                            + username
+                            + " has joined chat.");
+
             sendUserList();
 
-            sendMessage("[SERVER] Welcome " + username);
+            sendMessage(
+                    "[SERVER] Welcome "
+                            + username);
 
             String msg;
+
             while ((msg = in.readLine()) != null) {
 
                 if (msg.startsWith("/pm ")) {
-                    handlePM(msg);
-                } else {
-                    String time = LocalDateTime.now()
-                            .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
 
-                    manager.broadcast("[" + time + "] " + username + ": " + msg);
+                    handlePM(msg);
+
+                } else {
+
+                    String time =
+                            LocalDateTime.now()
+                                    .format(
+                                            DateTimeFormatter.ofPattern(
+                                                    "HH:mm:ss"));
+
+                    manager.broadcast(
+                            "[" + time + "] "
+                                    + username
+                                    + ": "
+                                    + msg);
                 }
             }
 
-        } catch (Exception e) {
-            System.out.println("Error: " + username);
-        } finally {
+        }
+        catch (Exception e) {
+
+            System.out.println(
+                    "Error: "
+                            + username);
+
+            e.printStackTrace();
+
+        }
+        finally {
+
             cleanup();
         }
     }
 
     private void handlePM(String msg) {
 
-        String[] parts = msg.split(" ", 3);
-        if (parts.length < 3) return;
+        String[] parts =
+                msg.split(" ", 3);
 
-        String target = parts[1];
-        String content = parts[2];
+        if (parts.length < 3) {
+            return;
+        }
 
-        ClientHandler receiver = manager.findClient(target);
+        String target =
+                parts[1];
 
-        String time = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        String content =
+                parts[2];
+
+        ClientHandler receiver =
+                manager.findClient(target);
+
+        String time =
+                LocalDateTime.now()
+                        .format(
+                                DateTimeFormatter.ofPattern(
+                                        "HH:mm:ss"));
 
         if (receiver != null) {
-            receiver.sendMessage("[PM][" + time + "] from " + username + ": " + content);
-            sendMessage("[PM][" + time + "] to " + target + ": " + content);
+
+            receiver.sendMessage(
+                    "[PM]["
+                            + time
+                            + "] from "
+                            + username
+                            + ": "
+                            + content);
+
+            sendMessage(
+                    "[PM]["
+                            + time
+                            + "] to "
+                            + target
+                            + ": "
+                            + content);
+
         } else {
-            sendMessage("[SERVER] User not found");
+
+            sendMessage(
+                    "[SERVER] User not found");
         }
     }
 
     public void sendMessage(String msg) {
-        if (out != null) out.println(msg);
+
+        if (out != null) {
+
+            out.println(msg);
+        }
     }
 
     public String getUsername() {
+
         return username;
     }
 
     private void sendUserList() {
-        manager.broadcast("USERLIST:" + manager.getUserList());
+
+        manager.broadcast(
+                "USERLIST:"
+                        + manager.getUserList());
     }
 
     private void cleanup() {
+
         try {
+
             manager.removeClient(this);
 
-            manager.broadcast("[SERVER] " + username + " left chat.");
+            manager.broadcast(
+                    "[SERVER] "
+                            + username
+                            + " left chat.");
+
             sendUserList();
 
-            socket.close();
-        } catch (Exception ignored) {}
+            if (in != null) {
+                in.close();
+            }
+
+            if (out != null) {
+                out.close();
+            }
+
+            if (socket != null &&
+                    !socket.isClosed()) {
+
+                socket.close();
+            }
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
     }
 }
