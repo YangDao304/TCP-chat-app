@@ -1,4 +1,3 @@
-# TCP-chat-app #
 ### Team Member ###
 1. Đào Châu Giang ID: 079206001855
    Github: YangDao304
@@ -40,4 +39,70 @@
 - TCP Socket
 - Multithreading
 - Github
-### Planning ###
+### Project Structure ###
+```text
+TCP-CHAT-APP/
+│
+├── Code/                  # Source code and batch files
+│   ├── client/            # Client connection logic
+│   ├── gui/               # Swing user interfaces
+│   ├── server/            # TCP server implementation
+│   ├── util/              # Utility classes
+│   ├── RunServer.bat      # Compile and start the server
+│   └── RunClient.bat      # Compile and start a client
+│
+├── DOCX/                  # Project documentation
+├── PPTX/                  # Presentation slides
+├── Extra/                 # Additional project resources
+│
+└── README.md
+```
+### System Requirements ###
+- Java JDK 17 or later
+- Windows 10/11
+- Command Prompt (CMD)
+- Visual Studio Code (recommended)
+### How to Run ###
+1. Open terminal
+2. Enter **.\Runserver.bat**
+3. Enter the server port (press **Enter** to use the default port **1234**).
+4. Enter **.\Run Client.bat**.
+5. Enter your username, server IP address, and port.
+6. Open additional client windows by open another terminal and enter **.\Run Client.bat** again if you want to test multiple users.
+### Main Functions ###
+### Login
+- Username validation
+- IP Address validation
+- Port validation
+### Chat
+- Public Chat
+- Private Message
+- Reply Message
+- Forward Message
+### User Interface
+- Online User List
+- User Avatar
+- Dark / Light Theme
+### Test Cases ###
+The application has been tested with the following scenarios:
+- Server Start
+- Client Connection
+- Login Validation
+- Invalid IP Address
+- Invalid Port
+- Broadcast Message
+- Private Message
+- Reply Message
+- Forward Message
+- Multiple Clients Join Chat Room
+- Online User List Update
+- Empty Message
+- Long Message
+- User Avatar Display
+- Dark / Light Theme
+- Reply Cancellation
+- Consecutive Messages
+### Authors ###
+- Group 9 
+- Course: Network Programming
+- Language: Java
