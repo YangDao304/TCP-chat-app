@@ -64,11 +64,12 @@ TCP-CHAT-APP/
 - Visual Studio Code (recommended)
 ### How to Run ###
 1. Open terminal
-2. Enter **.\Runserver.bat**
-3. Enter the server port (press **Enter** to use the default port **1234**).
-4. Enter **.\Run Client.bat**.
-5. Enter your username, server IP address, and port.
-6. Open additional client windows by open another terminal and enter **.\Run Client.bat** again if you want to test multiple users.
+2. Enter **cd code**
+3. Enter **.\Runserver.bat**
+4. Enter the server port (press **Enter** to use the default port **1234**).
+5. Enter **.\Run Client.bat**.
+6. Enter your username, server IP address, and port.
+7. Open additional client windows by open another terminal and enter **.\Run Client.bat** again if you want to test multiple users.
 ### Main Functions ###
 ### Login
 - Username validation
